@@ -174,7 +174,6 @@ const FIELDS = {
     ['agentCost','Fully loaded cost per agent per year',20000,70000,500,'£','','Salary, on-costs, management and facilities.']
   ],
   ai: [
-    ['aiAht','AI handle time',1,20,.5,'',' min','Average time per call the AI resolves. Sets the AI usage cost.'],
     ['current','Calls already automated today',0,60,1,'','%','Resolved with no agent, for example by IVR or a bot.'],
     ['target','Target containment',5,80,1,'','%','Share of all calls resolved by AI, with no agent.'],
     ['realise','Freed capacity you can realise',0,100,5,'','%','The rest is lost to rota gaps, peaks and idle time.']
@@ -186,6 +185,7 @@ const FIELDS = {
   ],
   price: [
     ['aiRate','AI price per minute',.05,1.5,.01,'£',''],
+    ['aiAht','AI handle time',1,20,.5,'',' min','Average time per call the AI resolves. Sets the AI usage cost.'],
     ['platform','Annual platform fee',0,60000,500,'£',''],
     ['setup','Setup and integration, one-off',0,150000,1000,'£',''],
     ['days','Readiness assessment, days at £1,100',0,30,1,'',' days'],
