@@ -108,8 +108,8 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
     <label class="check"><input type="checkbox" id="includeMissed" checked> Include revenue from answering missed calls</label>
     <div id="f-missed"></div>
     <details>
-      <summary>Pricing, capacity and rollout assumptions</summary>
-      <p class="hint">Illustrative figures. Replace prices with a real quote, as AI pricing varies by vendor and volume.</p>
+      <summary>Pricing and rollout assumptions</summary>
+      <p class="hint">Illustrative figures. Replace them with a real quote, as AI pricing varies by vendor and volume.</p>
       <div id="f-price"></div>
     </details>
   </form>
@@ -143,7 +143,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
 
 <section class="info">
   <h2>How the estimate works</h2>
-  <p>Most of the return comes from calls the AI resolves without an agent. We convert the agent time on those calls into seats, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
+  <p>Most of the return comes from calls the AI resolves without an agent. We convert the agent time on those calls into seats, based on the paid hours agents have left after off-phone time such as breaks, meetings and illness. We then count only the capacity you can realistically release and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
   <p>We then subtract what the AI costs to run. Calls the AI resolves and missed calls it answers are billed at the AI handle time, and calls that transfer to an agent are billed for about a minute of triage. Missed-call revenue is shown as its own line, so you can judge the case with or without it.</p>
 </section>
 
@@ -169,6 +169,8 @@ const FIELDS = {
     ['seats','Agent seats',1,100,1,'',' seats'],
     ['monthlyCalls','Monthly calls',100,200000,100,'','','All calls answered today, by agents or automation. Excludes missed calls.'],
     ['aht','Agent handle time',1,20,.5,'',' min','Average time per call for a human agent.'],
+    ['paidHours','Paid hours per agent per month',80,200,.5,'',' hours','162.5 hours is a 37.5-hour week.'],
+    ['offPhone','Off-phone time',0,70,1,'','%','Paid time not available for calls, such as breaks, meetings, training and illness.'],
     ['agentCost','Fully loaded cost per agent per year',20000,70000,500,'£','','Salary, on-costs, management and facilities.']
   ],
   ai: [
@@ -187,11 +189,10 @@ const FIELDS = {
     ['platform','Annual platform fee',0,60000,500,'£',''],
     ['setup','Setup and integration, one-off',0,150000,1000,'£',''],
     ['days','Readiness assessment, days at £1,100',0,30,1,'',' days'],
-    ['golive','Months to go-live',1,12,1,'',' months'],
-    ['talkHours','Talk time per agent per month',40,160,5,'',' hours','Time on calls, excluding breaks, training and idle time. Converts calls into seats.']
+    ['golive','Months to go-live',1,12,1,'',' months']
   ]
 };
-const DEFAULTS = {seats:25,monthlyCalls:20000,talkHours:100,aht:6,aiAht:4,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
+const DEFAULTS = {seats:25,monthlyCalls:20000,paidHours:162.5,offPhone:38,aht:6,aiAht:4,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
 const PRESETS = {
   home:{seats:8,monthlyCalls:8000,aht:5,aiAht:3.5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
   dental:{seats:12,monthlyCalls:14000,aht:4,aiAht:3,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
@@ -205,7 +206,8 @@ function calculate(i){
   const cur = i.current / 100, tgt = Math.max(i.target / 100, cur), added = tgt - cur;
   const contained = calls * added;
   const transferred = calls * (1 - cur) - contained;
-  const seatsFreed = contained * i.aht / 60 / i.talkHours;
+  const availableHours = i.paidHours * (1 - i.offPhone / 100);
+  const seatsFreed = contained * i.aht / 60 / availableHours;
   const seatCap = i.seats * (added / (1 - cur));
   const capacity = Math.min(seatsFreed, seatCap) * (i.realise / 100);
   const seatsReleased = Math.floor(capacity + 1e-9);
