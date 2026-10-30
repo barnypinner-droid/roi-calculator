@@ -108,8 +108,8 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
     <label class="check"><input type="checkbox" id="includeMissed" checked> Include revenue from answering missed calls</label>
     <div id="f-missed"></div>
     <details>
-      <summary>Pricing and rollout assumptions</summary>
-      <p class="hint">Illustrative figures. Replace them with a real quote, as AI pricing varies by vendor and volume.</p>
+      <summary>Pricing, capacity and rollout assumptions</summary>
+      <p class="hint">Illustrative figures. Replace prices with a real quote, as AI pricing varies by vendor and volume.</p>
       <div id="f-price"></div>
     </details>
   </form>
@@ -143,7 +143,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
 
 <section class="info">
   <h2>How the estimate works</h2>
-  <p>Most of the return comes from calls the AI resolves without an agent. We convert those calls into freed capacity, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
+  <p>Most of the return comes from calls the AI resolves without an agent. We convert the talk time on those calls into agent seats, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
   <p>We then subtract what the AI costs to run. Every routed call is billed, including about a minute of triage on calls that transfer to an agent. Missed-call revenue is shown as its own line, so you can judge the case with or without it.</p>
 </section>
 
@@ -167,7 +167,7 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
 const FIELDS = {
   centre: [
     ['seats','Agent seats',1,100,1,'',' seats'],
-    ['callsPerSeat','Calls per seat per month',100,2000,25,'',''],
+    ['monthlyCalls','Monthly calls',100,200000,100,'','','All inbound calls answered by agents today.'],
     ['aht','Average handle time',1,20,.5,'',' min'],
     ['agentCost','Fully loaded cost per agent per year',20000,70000,500,'£','','Salary, on-costs, management and facilities.']
   ],
@@ -186,24 +186,27 @@ const FIELDS = {
     ['platform','Annual platform fee',0,60000,500,'£',''],
     ['setup','Setup and integration, one-off',0,150000,1000,'£',''],
     ['days','Readiness assessment, days at £1,100',0,30,1,'',' days'],
-    ['golive','Months to go-live',1,12,1,'',' months']
+    ['golive','Months to go-live',1,12,1,'',' months'],
+    ['talkHours','Talk time per agent per month',40,160,5,'',' hours','Time on calls, excluding breaks, training and idle time. Converts calls into seats.']
   ]
 };
-const DEFAULTS = {seats:25,callsPerSeat:600,aht:6,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
+const DEFAULTS = {seats:25,monthlyCalls:20000,talkHours:100,aht:6,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
 const PRESETS = {
-  home:{seats:8,callsPerSeat:700,aht:5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
-  dental:{seats:12,callsPerSeat:800,aht:4,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
-  retail:{seats:30,callsPerSeat:900,aht:6,agentCost:31000,current:5,target:40,missedRate:6,bookRate:10,margin:25},
-  utility:{seats:75,callsPerSeat:900,aht:8,agentCost:38000,current:10,target:35,missedRate:4,bookRate:5,margin:40}
+  home:{seats:8,monthlyCalls:8000,aht:5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
+  dental:{seats:12,monthlyCalls:14000,aht:4,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
+  retail:{seats:30,monthlyCalls:25000,aht:6,agentCost:31000,current:5,target:40,missedRate:6,bookRate:10,margin:25},
+  utility:{seats:75,monthlyCalls:50000,aht:8,agentCost:38000,current:10,target:35,missedRate:4,bookRate:5,margin:40}
 };
 const DAY_RATE = 1100, TRIAGE_MIN = 1, HORIZON = 36;
 
 function calculate(i){
-  const calls = i.seats * i.callsPerSeat;
+  const calls = i.monthlyCalls;
   const cur = i.current / 100, tgt = Math.max(i.target / 100, cur), added = tgt - cur;
   const contained = calls * added;
   const transferred = calls * (1 - cur) - contained;
-  const capacity = cur < 1 ? i.seats * (added / (1 - cur)) * (i.realise / 100) : 0;
+  const seatsFreed = contained * i.aht / 60 / i.talkHours;
+  const seatCap = i.seats * (added / (1 - cur));
+  const capacity = Math.min(seatsFreed, seatCap) * (i.realise / 100);
   const seatsReleased = Math.floor(capacity + 1e-9);
   const labour = seatsReleased * i.agentCost;
   const missed = i.includeMissed ? calls * i.missedRate / 100 : 0;
@@ -221,7 +224,7 @@ function calculate(i){
   const breakEven = minutes > 0 ? (benefit - i.platform - oneOff / liveYears) / (minutes * 12) : 0;
   const series = [-oneOff];
   for (let m = 1; m <= HORIZON; m++) series.push(series[m - 1] + (m > i.golive ? net / 12 : 0));
-  return {calls,contained,capacity,seatsReleased,labour,recovered,usage,run,benefit,net,oneOff,net3,totalCost,roi:net3/totalCost,payback,breakEven,series};
+  return {calls,contained,capacity,capped:seatsFreed>seatCap,seatsReleased,labour,recovered,usage,run,benefit,net,oneOff,net3,totalCost,roi:net3/totalCost,payback,breakEven,series};
 }
 
 const state = {...DEFAULTS};
@@ -262,6 +265,7 @@ function render(){
   const notes = [];
   if (state.target <= state.current) notes.push('Your target containment is no higher than today, so the AI adds no containment in this scenario.');
   else if (r.seatsReleased === 0) notes.push(`This scenario frees ${r.capacity.toFixed(1)} seats of capacity, which is less than one whole seat, so no labour saving is counted.`);
+  if (r.capped) notes.push('These calls need more agents than your seat count, so the labour saving is capped at the share of seats the AI can free.');
   if (r.net3 < 0) notes.push('On these inputs, the AI does not pay for itself within three years.');
   $('notice').innerHTML = notes.length ? `<div class="notice">${notes.join(' ')}</div>` : '';
   const row = (l,v,c='') => `<tr class="${c}"><td>${l}</td><td class="${v<0?'neg':''}">${full(v)}</td></tr>`;
