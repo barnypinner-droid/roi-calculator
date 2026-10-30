@@ -143,8 +143,8 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
 
 <section class="info">
   <h2>How the estimate works</h2>
-  <p>Most of the return comes from calls the AI resolves without an agent. We convert the talk time on those calls into agent seats, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
-  <p>We then subtract what the AI costs to run. Every routed call is billed, including about a minute of triage on calls that transfer to an agent. Missed-call revenue is shown as its own line, so you can judge the case with or without it.</p>
+  <p>Most of the return comes from calls the AI resolves without an agent. We convert the agent time on those calls into seats, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
+  <p>We then subtract what the AI costs to run. Calls the AI resolves and missed calls it answers are billed at the AI handle time, and calls that transfer to an agent are billed for about a minute of triage. Missed-call revenue is shown as its own line, so you can judge the case with or without it.</p>
 </section>
 
 <section class="info faq">
@@ -167,17 +167,18 @@ footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);f
 const FIELDS = {
   centre: [
     ['seats','Agent seats',1,100,1,'',' seats'],
-    ['monthlyCalls','Monthly calls',100,200000,100,'','','All inbound calls answered by agents today.'],
-    ['aht','Average handle time',1,20,.5,'',' min'],
+    ['monthlyCalls','Monthly calls',100,200000,100,'','','All calls answered today, by agents or automation. Excludes missed calls.'],
+    ['aht','Agent handle time',1,20,.5,'',' min','Average time per call for a human agent.'],
     ['agentCost','Fully loaded cost per agent per year',20000,70000,500,'£','','Salary, on-costs, management and facilities.']
   ],
   ai: [
+    ['aiAht','AI handle time',1,20,.5,'',' min','Average time per call the AI resolves. Sets the AI usage cost.'],
     ['current','Calls already automated today',0,60,1,'','%','Resolved with no agent, for example by IVR or a bot.'],
     ['target','Target containment',5,80,1,'','%','Share of all calls resolved by AI, with no agent.'],
     ['realise','Freed capacity you can realise',0,100,5,'','%','The rest is lost to rota gaps, peaks and idle time.']
   ],
   missed: [
-    ['missedRate','Calls missed or abandoned',0,40,1,'','%'],
+    ['missedRate','Calls missed or abandoned',0,40,1,'','%','As a percentage of monthly calls.'],
     ['bookRate','Missed calls that become a sale or booking',0,100,1,'','%'],
     ['margin','Gross margin per sale or booking',0,1000,5,'£','']
   ],
@@ -190,12 +191,12 @@ const FIELDS = {
     ['talkHours','Talk time per agent per month',40,160,5,'',' hours','Time on calls, excluding breaks, training and idle time. Converts calls into seats.']
   ]
 };
-const DEFAULTS = {seats:25,monthlyCalls:20000,talkHours:100,aht:6,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
+const DEFAULTS = {seats:25,monthlyCalls:20000,talkHours:100,aht:6,aiAht:4,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
 const PRESETS = {
-  home:{seats:8,monthlyCalls:8000,aht:5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
-  dental:{seats:12,monthlyCalls:14000,aht:4,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
-  retail:{seats:30,monthlyCalls:25000,aht:6,agentCost:31000,current:5,target:40,missedRate:6,bookRate:10,margin:25},
-  utility:{seats:75,monthlyCalls:50000,aht:8,agentCost:38000,current:10,target:35,missedRate:4,bookRate:5,margin:40}
+  home:{seats:8,monthlyCalls:8000,aht:5,aiAht:3.5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
+  dental:{seats:12,monthlyCalls:14000,aht:4,aiAht:3,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
+  retail:{seats:30,monthlyCalls:25000,aht:6,aiAht:4,agentCost:31000,current:5,target:40,missedRate:6,bookRate:10,margin:25},
+  utility:{seats:75,monthlyCalls:50000,aht:8,aiAht:5.5,agentCost:38000,current:10,target:35,missedRate:4,bookRate:5,margin:40}
 };
 const DAY_RATE = 1100, TRIAGE_MIN = 1, HORIZON = 36;
 
@@ -211,7 +212,7 @@ function calculate(i){
   const labour = seatsReleased * i.agentCost;
   const missed = i.includeMissed ? calls * i.missedRate / 100 : 0;
   const recovered = missed * (i.bookRate / 100) * i.margin * 12;
-  const minutes = contained * i.aht + transferred * TRIAGE_MIN + missed * i.aht;
+  const minutes = contained * i.aiAht + transferred * TRIAGE_MIN + missed * i.aiAht;
   const usage = minutes * i.aiRate * 12;
   const run = usage + i.platform;
   const benefit = labour + recovered;
@@ -265,6 +266,7 @@ function render(){
   const notes = [];
   if (state.target <= state.current) notes.push('Your target containment is no higher than today, so the AI adds no containment in this scenario.');
   else if (r.seatsReleased === 0) notes.push(`This scenario frees ${r.capacity.toFixed(1)} seats of capacity, which is less than one whole seat, so no labour saving is counted.`);
+  if (state.aiAht > state.aht) notes.push('Your AI handle time is longer than your agent handle time, so check both figures.');
   if (r.capped) notes.push('These calls need more agents than your seat count, so the labour saving is capped at the share of seats the AI can free.');
   if (r.net3 < 0) notes.push('On these inputs, the AI does not pay for itself within three years.');
   $('notice').innerHTML = notes.length ? `<div class="notice">${notes.join(' ')}</div>` : '';
