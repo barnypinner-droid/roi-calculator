@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversational AI ROI Calculator | TalkCX</title>
+<meta name="description" content="Model the cost, payback and three-year return of conversational AI for a UK contact centre of up to 100 seats.">
+<style>
+:root{--bg:#0b0d14;--surface:#141722;--surface2:#1c2030;--line:#2b3044;--ink:#f3f4f8;--muted:#a6adc0;--pink:#ff2e7e;--blue:#35a7ff;--good:#3ddc97;--warn:#ffb347;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+a{color:var(--blue)}
+.wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+header.top{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;gap:12px;margin-top:14px;background:#fff;border-radius:12px}
+.logo{display:block;line-height:0}.logo img{display:block;height:44px;width:auto}
+.btn{display:inline-block;border:0;border-radius:8px;padding:11px 18px;background:var(--pink);color:#fff;font:600 15px/1.2 inherit;font-family:inherit;text-decoration:none;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn:hover{filter:brightness(1.1)}
+.btn:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.hero{padding:30px 0 28px;max-width:780px}
+.eyebrow{color:var(--blue);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px}
+h1{font-size:clamp(32px,5vw,50px);line-height:1.08;letter-spacing:-.02em;margin:0 0 14px}
+.hero p{color:var(--muted);font-size:18px;margin:0}
+.layout{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:22px;align-items:start}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px}
+.results{position:sticky;top:14px}
+h2{font-size:21px;margin:0 0 16px;letter-spacing:-.01em}
+h3{font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin:24px 0 12px}
+label.sel{display:block;font-weight:600;font-size:14px;margin-bottom:6px}
+select{width:100%;padding:11px;border-radius:8px;background:var(--surface2);border:1px solid var(--line);color:var(--ink);font:inherit}
+.field{margin:0 0 18px}
+.field .row{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:6px}
+.field label{font-weight:600;font-size:14px}
+.num{display:flex;align-items:center;background:var(--surface2);border:1px solid var(--line);border-radius:7px;padding:0 8px;font-size:14px;color:var(--muted);flex:none}
+.num input{width:72px;background:none;border:0;color:var(--ink);font:600 14px inherit;font-family:inherit;padding:6px 3px;text-align:right;-moz-appearance:textfield}
+.num input::-webkit-outer-spin-button,.num input::-webkit-inner-spin-button{-webkit-appearance:none}
+.hint{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4}
+input[type=range]{width:100%;accent-color:var(--pink);margin:2px 0;height:24px}
+.check{display:flex;gap:10px;align-items:center;font-weight:600;font-size:14px;margin-bottom:14px}
+.check input{width:18px;height:18px;accent-color:var(--pink)}
+details{border-top:1px solid var(--line);margin-top:6px;padding-top:12px}
+summary{cursor:pointer;font-weight:600}
+.headline{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:18px}
+.stat{background:var(--surface2);border-radius:10px;padding:14px}
+.stat b{display:block;font-size:clamp(23px,2.7vw,31px);line-height:1.15;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat small{display:block;color:var(--muted);font-size:13px;margin-top:4px}
+.notice{border-left:3px solid var(--warn);background:rgba(255,179,71,.09);padding:10px 12px;border-radius:0 8px 8px 0;font-size:14px;margin-bottom:16px}
+.chart{position:relative;margin-bottom:6px}
+.chart svg{display:block;width:100%;height:auto;touch-action:pan-y}
+.tip{position:absolute;pointer-events:none;background:#000;border:1px solid var(--line);border-radius:6px;padding:5px 9px;font-size:12.5px;white-space:nowrap;transform:translate(-50%,-115%);display:none}
+.caption{font-weight:600;font-size:14px;margin:0 0 6px}
+table{width:100%;border-collapse:collapse;font-size:14px;font-variant-numeric:tabular-nums}
+th,td{padding:8px 0;border-bottom:1px solid var(--line);text-align:right}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--muted);font-weight:600;font-size:12.5px}
+td+td{white-space:nowrap;padding-left:12px}
+tr.total td{font-weight:700;border-bottom:0}
+.neg{color:var(--warn)}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.foot{font-size:12.5px;color:var(--muted);margin:14px 0 0}
+section.info{padding:44px 0 0;max-width:800px}
+section.info p,section.info li{color:#ced3e0}
+.faq details{border-top:1px solid var(--line);padding:13px 0;margin:0}
+.faq details p{margin:8px 0 0}
+.cta{margin:48px 0;padding:30px;border-radius:14px;background:linear-gradient(120deg,rgba(255,46,126,.2),rgba(53,167,255,.2));border:1px solid var(--line)}
+.cta h2{font-size:26px;margin-bottom:6px}.cta p{margin:0 0 16px;color:#d9dcea}
+footer{border-top:1px solid var(--line);padding:20px 0 34px;color:var(--muted);font-size:13px}
+@media(max-width:900px){.layout{grid-template-columns:minmax(0,1fr)}.results{position:static}}
+@media(max-width:520px){.wrap{padding:0 16px}.headline{grid-template-columns:1fr 1fr}.headline .stat:first-child{grid-column:1/-1}.card{padding:16px}}
+@media print{
+ :root{--bg:#fff;--surface:#fff;--surface2:#f3f4f7;--line:#ccc;--ink:#111;--muted:#555;color-scheme:light}
+ .actions,.cta,section.info,header .btn,.inputs select,input[type=range],.hero p{display:none}.layout{grid-template-columns:1fr 1fr}.results{position:static}.card{break-inside:avoid}
+ details>*{display:block}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="top">
+  <a class="logo" href="https://talkcx.co.uk"><img src="data:image/jpeg;base64,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" alt="TalkCX" width="150" height="44"></a>
+  <a class="btn" href="https://calendly.com/barny-pinner-talkcx/30min">Book a call</a>
+</header>
+
+<div class="hero">
+  <p class="eyebrow">Free tool · No signup</p>
+  <h1>What is conversational AI worth to your contact centre?</h1>
+  <p>Model the cost, payback and three-year return for a UK operation of up to 100 seats, using your own numbers.</p>
+</div>
+
+<div class="layout">
+  <form class="card inputs" id="form" onsubmit="return false">
+    <label class="sel" for="preset">Start from a typical profile</label>
+    <select id="preset">
+      <option value="custom">Custom</option>
+      <option value="home">Home services, 8 seats</option>
+      <option value="dental">Dental group, 12 seats</option>
+      <option value="retail">Retail and e-commerce, 30 seats</option>
+      <option value="utility">Utilities or financial services, 75 seats</option>
+    </select>
+    <div class="hint">Profiles are illustrative starting points, not benchmarks.</div>
+
+    <h3>Your contact centre</h3>
+    <div id="f-centre"></div>
+    <h3>Conversational AI</h3>
+    <div id="f-ai"></div>
+    <h3>Missed calls</h3>
+    <label class="check"><input type="checkbox" id="includeMissed" checked> Include revenue from answering missed calls</label>
+    <div id="f-missed"></div>
+    <details>
+      <summary>Pricing and rollout assumptions</summary>
+      <p class="hint">Illustrative figures. Replace them with a real quote, as AI pricing varies by vendor and volume.</p>
+      <div id="f-price"></div>
+    </details>
+  </form>
+
+  <div class="card results" aria-live="polite">
+    <h2>The economics</h2>
+    <div id="notice"></div>
+    <div class="headline">
+      <div class="stat"><b id="o-net"></b><small>3-year net benefit</small></div>
+      <div class="stat"><b id="o-payback"></b><small>Payback</small></div>
+      <div class="stat"><b id="o-roi"></b><small>3-year ROI</small></div>
+    </div>
+    <p class="caption">Cumulative net position over 36 months</p>
+    <div class="chart" id="chart"></div>
+    <div class="tip" id="tip"></div>
+    <h3>Annual run rate, once live</h3>
+    <table id="table"></table>
+    <div class="headline" style="margin-top:16px;margin-bottom:0">
+      <div class="stat"><b id="o-seats" style="font-size:24px"></b><small>Seats released</small></div>
+      <div class="stat"><b id="o-calls" style="font-size:24px"></b><small>Calls contained per month</small></div>
+      <div class="stat"><b id="o-be" style="font-size:24px"></b><small>Break-even AI price per minute</small></div>
+    </div>
+    <div class="actions">
+      <a class="btn" href="https://calendly.com/barny-pinner-talkcx/30min">Review these numbers with us</a>
+      <button class="btn ghost" type="button" id="print">Save as PDF</button>
+      <button class="btn ghost" type="button" id="share">Copy link</button>
+    </div>
+    <p class="foot">An estimate, not a quote or guarantee. Excludes VAT, telephony carrier fees and custom integration work.</p>
+  </div>
+</div>
+
+<section class="info">
+  <h2>How the estimate works</h2>
+  <p>Most of the return comes from calls the AI resolves without an agent. We convert those calls into freed capacity, count only the capacity you can realistically release, and round down to whole seats. A centre cannot save 0.4 of a person, so small teams see this as a step rather than a smooth line.</p>
+  <p>We then subtract what the AI costs to run. Every routed call is billed, including about a minute of triage on calls that transfer to an agent. Missed-call revenue is shown as its own line, so you can judge the case with or without it.</p>
+</section>
+
+<section class="info faq">
+  <h2>Questions</h2>
+  <details><summary>What containment rate should I use?</summary><p>It depends on your call types. Simple bookings, order status and routine account changes tend to contain well, while complaints and complex cases do not. Test a cautious figure first, then confirm it with a call-driver review.</p></details>
+  <details><summary>Does this assume redundancies?</summary><p>No. "Seats released" is capacity, which you might realise through attrition, less overtime or agency spend, avoided hiring, or moving people to higher-value work. The share you can realise is an input.</p></details>
+  <details><summary>Why can the result be negative?</summary><p>AI is not always the right answer yet. With low volumes, short calls or a small team, the running cost can exceed what you can realistically save. The break-even price shows how far pricing would have to move.</p></details>
+  <details><summary>What is not included?</summary><p>Telephony carrier fees, custom integrations and any uplift in customer satisfaction or out-of-hours coverage beyond the missed calls you enter.</p></details>
+</section>
+
+<div class="cta">
+  <h2>Want these numbers tested against your calls?</h2>
+  <p>In a free 30-minute call, we will tell you honestly whether AI voice suits your contact centre now.</p>
+  <a class="btn" href="https://calendly.com/barny-pinner-talkcx/30min">Book a free 30-minute call</a>
+</div>
+<footer>© TalkCX · <a href="https://talkcx.co.uk">talkcx.co.uk</a> · <a href="mailto:info@talkcx.co.uk">info@talkcx.co.uk</a> · <a href="https://talkcx.co.uk/privacy.html">Privacy</a></footer>
+</div>
+
+<script>
+const FIELDS = {
+  centre: [
+    ['seats','Agent seats',1,100,1,'',' seats'],
+    ['callsPerSeat','Calls per seat per month',100,2000,25,'',''],
+    ['aht','Average handle time',1,20,.5,'',' min'],
+    ['agentCost','Fully loaded cost per agent per year',20000,70000,500,'£','','Salary, on-costs, management and facilities.']
+  ],
+  ai: [
+    ['current','Calls already automated today',0,60,1,'','%','Resolved with no agent, for example by IVR or a bot.'],
+    ['target','Target containment',5,80,1,'','%','Share of all calls resolved by AI, with no agent.'],
+    ['realise','Freed capacity you can realise',0,100,5,'','%','The rest is lost to rota gaps, peaks and idle time.']
+  ],
+  missed: [
+    ['missedRate','Calls missed or abandoned',0,40,1,'','%'],
+    ['bookRate','Missed calls that become a sale or booking',0,100,1,'','%'],
+    ['margin','Gross margin per sale or booking',0,1000,5,'£','']
+  ],
+  price: [
+    ['aiRate','AI price per minute',.05,1.5,.01,'£',''],
+    ['platform','Annual platform fee',0,60000,500,'£',''],
+    ['setup','Setup and integration, one-off',0,150000,1000,'£',''],
+    ['days','Readiness assessment, days at £1,100',0,30,1,'',' days'],
+    ['golive','Months to go-live',1,12,1,'',' months']
+  ]
+};
+const DEFAULTS = {seats:25,callsPerSeat:600,aht:6,agentCost:32000,current:0,target:45,realise:80,missedRate:8,bookRate:20,margin:60,aiRate:.25,platform:6000,setup:15000,days:7,golive:3,includeMissed:1};
+const PRESETS = {
+  home:{seats:8,callsPerSeat:700,aht:5,agentCost:30000,current:0,target:45,missedRate:12,bookRate:30,margin:90},
+  dental:{seats:12,callsPerSeat:800,aht:4,agentCost:29000,current:0,target:50,missedRate:10,bookRate:35,margin:120},
+  retail:{seats:30,callsPerSeat:900,aht:6,agentCost:31000,current:5,target:40,missedRate:6,bookRate:10,margin:25},
+  utility:{seats:75,callsPerSeat:900,aht:8,agentCost:38000,current:10,target:35,missedRate:4,bookRate:5,margin:40}
+};
+const DAY_RATE = 1100, TRIAGE_MIN = 1, HORIZON = 36;
+
+function calculate(i){
+  const calls = i.seats * i.callsPerSeat;
+  const cur = i.current / 100, tgt = Math.max(i.target / 100, cur), added = tgt - cur;
+  const contained = calls * added;
+  const transferred = calls * (1 - cur) - contained;
+  const capacity = cur < 1 ? i.seats * (added / (1 - cur)) * (i.realise / 100) : 0;
+  const seatsReleased = Math.floor(capacity + 1e-9);
+  const labour = seatsReleased * i.agentCost;
+  const missed = i.includeMissed ? calls * i.missedRate / 100 : 0;
+  const recovered = missed * (i.bookRate / 100) * i.margin * 12;
+  const minutes = contained * i.aht + transferred * TRIAGE_MIN + missed * i.aht;
+  const usage = minutes * i.aiRate * 12;
+  const run = usage + i.platform;
+  const benefit = labour + recovered;
+  const net = benefit - run;
+  const oneOff = i.setup + i.days * DAY_RATE;
+  const liveYears = (HORIZON - i.golive) / 12;
+  const totalBenefit = benefit * liveYears, totalCost = oneOff + run * liveYears;
+  const net3 = totalBenefit - totalCost;
+  const payback = net > 0 ? i.golive + oneOff / (net / 12) : null;
+  const breakEven = minutes > 0 ? (benefit - i.platform - oneOff / liveYears) / (minutes * 12) : 0;
+  const series = [-oneOff];
+  for (let m = 1; m <= HORIZON; m++) series.push(series[m - 1] + (m > i.golive ? net / 12 : 0));
+  return {calls,contained,capacity,seatsReleased,labour,recovered,usage,run,benefit,net,oneOff,net3,totalCost,roi:net3/totalCost,payback,breakEven,series};
+}
+
+const state = {...DEFAULTS};
+const $ = id => document.getElementById(id);
+const gbp = v => {
+  const a = Math.abs(v), s = v < 0 ? '−£' : '£';
+  if (a >= 1e6) return s + (a / 1e6).toFixed(2) + 'M';
+  if (a >= 1e4) return s + Math.round(a / 1e3) + 'k';
+  return s + Math.round(a).toLocaleString('en-GB');
+};
+const full = v => (v < 0 ? '−£' : '£') + Math.round(Math.abs(v)).toLocaleString('en-GB');
+
+function buildFields(){
+  for (const [group, list] of Object.entries(FIELDS)) {
+    $('f-' + group).innerHTML = list.map(([k,l,min,max,step,pre,suf,hint]) => `
+      <div class="field"><div class="row"><label for="n-${k}">${l}</label>
+      <span class="num">${pre}<input id="n-${k}" data-k="${k}" type="number" inputmode="decimal" min="${min}" max="${max}" step="${step}">${suf}</span></div>
+      <input id="r-${k}" data-k="${k}" type="range" min="${min}" max="${max}" step="${step}" aria-label="${l}">
+      ${hint ? `<div class="hint">${hint}</div>` : ''}</div>`).join('');
+  }
+}
+const RANGE = Object.fromEntries(Object.values(FIELDS).flat().map(f => [f[0], f]));
+
+function syncInputs(){
+  for (const k in RANGE) { $('n-' + k).value = state[k]; $('r-' + k).value = state[k]; }
+  $('includeMissed').checked = !!state.includeMissed;
+}
+
+function render(){
+  const r = calculate(state);
+  $('o-net').textContent = gbp(r.net3);
+  $('o-net').className = r.net3 < 0 ? 'neg' : '';
+  $('o-payback').textContent = r.payback === null || r.payback > HORIZON ? 'Over 3 yrs' : Math.ceil(r.payback) + ' months';
+  $('o-roi').textContent = Math.round(r.roi * 100).toLocaleString('en-GB') + '%';
+  $('o-seats').textContent = r.seatsReleased + ' of ' + state.seats;
+  $('o-calls').textContent = Math.round(r.contained).toLocaleString('en-GB');
+  $('o-be').textContent = r.breakEven > 0 ? '£' + r.breakEven.toFixed(2) : 'None';
+  const notes = [];
+  if (state.target <= state.current) notes.push('Your target containment is no higher than today, so the AI adds no containment in this scenario.');
+  else if (r.seatsReleased === 0) notes.push(`This scenario frees ${r.capacity.toFixed(1)} seats of capacity, which is less than one whole seat, so no labour saving is counted.`);
+  if (r.net3 < 0) notes.push('On these inputs, the AI does not pay for itself within three years.');
+  $('notice').innerHTML = notes.length ? `<div class="notice">${notes.join(' ')}</div>` : '';
+  const row = (l,v,c='') => `<tr class="${c}"><td>${l}</td><td class="${v<0?'neg':''}">${full(v)}</td></tr>`;
+  $('table').innerHTML = `<thead><tr><th>Per year</th><th>Amount</th></tr></thead><tbody>` +
+    row(`Labour capacity released (${r.seatsReleased} seats)`, r.labour) +
+    (state.includeMissed ? row('Revenue from answered missed calls', r.recovered) : '') +
+    row('AI usage', -r.usage) + row('Platform fee', -state.platform) +
+    row('Net benefit per year', r.net, 'total') + `</tbody>`;
+  drawChart(r.series);
+  try { history.replaceState(null, '', '#' + new URLSearchParams(state)); } catch (e) {}
+}
+
+function drawChart(s){
+  const W = 560, H = 210, L = 58, R = 12, T = 12, B = 26;
+  const lo = Math.min(0, ...s), hi = Math.max(0, ...s), span = (hi - lo) || 1;
+  const x = m => L + (W - L - R) * m / HORIZON, y = v => T + (H - T - B) * (hi - v) / span;
+  const pts = s.map((v, m) => `${x(m).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const ticks = [...new Set([lo, 0, hi])].filter((v, i, a) => i === 0 || a.every((o, j) => j >= i || Math.abs(o - v) > span * .1));
+  $('chart').innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Cumulative net position starts at ${full(s[0])} and reaches ${full(s[HORIZON])} after 36 months">
+    ${ticks.map(v => `<line x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" ${v===0?'stroke-width="1.5"':'stroke-dasharray="3 4"'}/><text x="${L-8}" y="${y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${gbp(v)}</text>`).join('')}
+    ${[0,12,24,36].map(m => `<text x="${x(m)}" y="${H-7}" text-anchor="${m === 36 ? 'end' : m ? 'middle' : 'start'}" font-size="11" fill="var(--muted)">${m ? 'Month ' + m : 'Start'}</text>`).join('')}
+    <polyline points="${pts}" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linejoin="round"/>
+    <circle cx="${x(36)}" cy="${y(s[36])}" r="4" fill="var(--blue)" stroke="var(--surface)" stroke-width="2"/>
+    <line id="cross" y1="${T}" y2="${H-B}" stroke="var(--muted)" visibility="hidden"/>
+    <rect x="${L}" y="0" width="${W-L-R}" height="${H}" fill="transparent" id="hit"/></svg>`;
+  const svg = $('chart').firstChild, tip = $('tip');
+  $('chart').appendChild(tip);
+  const move = e => {
+    const b = svg.getBoundingClientRect();
+    const m = Math.max(0, Math.min(HORIZON, Math.round(((e.clientX - b.left) * W / b.width - L) / (W - L - R) * HORIZON)));
+    const c = $('cross'); c.setAttribute('x1', x(m)); c.setAttribute('x2', x(m)); c.setAttribute('visibility', 'visible');
+    tip.style.display = 'block'; tip.textContent = `Month ${m}: ${full(s[m])}`;
+    tip.style.left = Math.max(70, Math.min(b.width - 70, x(m) * b.width / W)) + 'px';
+    tip.style.top = y(s[m]) * b.width / W + 'px';
+  };
+  svg.addEventListener('pointermove', move);
+  svg.addEventListener('pointerleave', () => { tip.style.display = 'none'; $('cross').setAttribute('visibility', 'hidden'); });
+}
+
+function clampValue(k, v){
+  const [, , min, max] = RANGE[k];
+  return Math.min(max, Math.max(min, v));
+}
+
+function readHash(){
+  const q = new URLSearchParams(location.hash.slice(1));
+  for (const k in DEFAULTS) {
+    const v = parseFloat(q.get(k));
+    if (!Number.isFinite(v)) continue;
+    state[k] = k === 'includeMissed' ? (v ? 1 : 0) : clampValue(k, v);
+  }
+}
+
+buildFields();
+readHash();
+syncInputs();
+render();
+
+$('form').addEventListener('input', e => {
+  const k = e.target.dataset.k;
+  if (k) {
+    const v = parseFloat(e.target.value);
+    if (!Number.isFinite(v)) return;
+    state[k] = clampValue(k, v);
+    (e.target.type === 'range' ? $('n-' + k) : $('r-' + k)).value = state[k];
+    $('preset').value = 'custom';
+  } else if (e.target.id === 'includeMissed') {
+    state.includeMissed = e.target.checked ? 1 : 0;
+  } else return;
+  render();
+});
+$('form').addEventListener('change', e => {
+  if (e.target.dataset.k) e.target.value = state[e.target.dataset.k];
+});
+$('preset').addEventListener('change', e => {
+  Object.assign(state, DEFAULTS, PRESETS[e.target.value] || {});
+  syncInputs(); render();
+});
+$('print').addEventListener('click', () => window.print());
+$('share').addEventListener('click', async e => {
+  try { await navigator.clipboard.writeText(location.href); e.target.textContent = 'Link copied'; }
+  catch (err) { e.target.textContent = 'Copy from address bar'; }
+  setTimeout(() => e.target.textContent = 'Copy link', 2000);
+});
+</script>
+</body>
+</html>
